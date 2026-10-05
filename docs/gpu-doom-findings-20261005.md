@@ -57,14 +57,21 @@ A native GL diagnostic completed three games without reproducing that failure.
 The deterministic resize bug is fixed; it is not proven to explain every earlier
 scanout failure. GL error checks remain enabled.
 
+VirGL 1.3.0 source audit confirms vrend_decode.c:2099 checks GL errors after
+command dispatch and propagates command failure; vrend_renderer.c:7552 implements
+that check. Simply deleting it would change correctness behavior. Investigate
+call/proxy overhead and redundant state changes instead.
+
 ## Current measured performance
 
-Identical fixed 350-tic demos in one browser lifetime:
+Identical fixed 640x480, 350-tic demos, sound disabled, in one browser lifetime:
 
 | Local report | Runtime | Guest FPS, games 1 / 2 / 3 | Completion |
 | --- | --- | --- | --- |
 | qemu-gpu-1791169451257 | Combined graphics fixes, original Wasm | 8.9 / 8.8 / 6.1 | All game exits zero; shutdown not observed |
 | qemu-gpu-1791169786459 | Same build plus checked int53 fast path | 9.2 / 9.4 / 7.9 | All games and Alpine powerdown verified |
+| qemu-gpu-1791170492802 | Unchanged control after candidate | 8.5 / 8.4 / 6.4 | All games and Alpine powerdown verified |
+| qemu-gpu-1791170835734 | Repeated int53 candidate | 9.0 / 8.7 / 7.3 | All games and Alpine powerdown verified |
 
 The control harness stopped at Doom exit before guest shutdown. It has been
 corrected to wait for powerdown; the candidate passed that stricter check.
@@ -73,8 +80,12 @@ not a shutdown pass.
 
 The conversion candidate passed 328701 differential checks, retains exact
 inclusive int53 boundary checks, and changes one emitted JavaScript helper.
-Wasm and guest are unchanged. The sequential comparison is promising but needs
-reverse-order repetition; no repeatable speedup or promotion is claimed.
+Wasm and guest are unchanged. The control/candidate/control/candidate sequence shows improved third-game guest
+FPS in both candidate runs (7.3-7.9 versus 6.1-6.4), while earlier-game results
+overlap. This is limited evidence, not a statistically established general gain.
+Frame-time spikes remain: repeated candidate game-three canvas-copy p99 was
+409ms versus 365ms in the adjacent control. These are compositor-copy intervals,
+not unique displayed-frame timings. The candidate remains an experiment.
 
 Earlier retirement at 9000 instances produced 6.7 / 7.6 / 8.6 guest FPS and
 lower final renderer private memory (~2695 MiB versus prior ~2840 MiB), but
