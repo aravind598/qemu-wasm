@@ -1,4 +1,4 @@
-# Browser GPU Doom findings — 2026-10-05
+# Browser GPU Doom findings - 2026-10-05
 
 Doom runs through browser QEMU, a minimal Alpine guest and VirGL/WebGL2.
 It is not yet reliably playable at 60 FPS. Repeated games still slow down, and the
@@ -70,6 +70,8 @@ Identical fixed 640x480, 350-tic demos, sound disabled, in one browser lifetime:
 | --- | --- | --- | --- |
 | qemu-gpu-1791169451257 | Combined graphics fixes, original Wasm | 8.9 / 8.8 / 6.1 | All game exits zero; shutdown not observed |
 | qemu-gpu-1791169786459 | Same build plus checked int53 fast path | 9.2 / 9.4 / 7.9 | All games and Alpine powerdown verified |
+| qemu-gpu-1791170492802 | Control after candidate | 8.5 / 8.4 / 6.4 | All games and Alpine powerdown verified |
+| qemu-gpu-1791170835734 | Candidate repeat | 9.0 / 8.7 / 7.3 | All games and Alpine powerdown verified |
 | qemu-gpu-1791170492802 | Unchanged control after candidate | 8.5 / 8.4 / 6.4 | All games and Alpine powerdown verified |
 | qemu-gpu-1791170835734 | Repeated int53 candidate | 9.0 / 8.7 / 7.3 | All games and Alpine powerdown verified |
 
@@ -110,6 +112,16 @@ release. World-region image checks passed. Offline replay matched 930/930 fresh
 GPU IOMMU walks across 196 GPU commands, with missing/corrupt-memory negatives
 passing. The observed 1435 cache hits are not replayed; invalidation parity is
 still unverified.
+
+## Next profiling experiment
+
+Use qemu-profilecontrol, the existing threshold-1500 build with matching symbols,
+combined graphics fixes and no JIT path-counter instrumentation. Wasm SHA256:
+`08b0c11085b7cd7c14a320bde60cbab719a67363c743f568e52c07a11fdd6db1`.
+First establish a no-profiler reference, then measure stack residence, browser
+calls and waits in game windows. Its symbol map must not be applied to the
+accepted 3a8ec141 build. Compare traced and untraced timings before attributing
+normal gameplay fractions or deriving optimization upper bounds.
 
 ## Evidence and scope
 
